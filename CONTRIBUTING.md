@@ -1,6 +1,10 @@
 # Разработчикам бэкенда
 
-[TOC]
+## Схемы приложения FastAI
+
+- [Локальная инсталляция бэкенда](https://gitlab.dvmn.org/root/fastapi-articles/-/wikis/fastai/backend_local_installation.drawio.png)
+- [Prod инсталляция бэкенда](https://gitlab.dvmn.org/root/fastapi-articles/-/wikis/fastai/backend_prod_installation.drawio.png)
+- [Декомпозиция бэкенда по подсистемам](https://gitlab.dvmn.org/root/fastapi-articles/-/wikis/fastai/backend_decomposition.drawio.png)
 
 ## Как развернуть локально
 
@@ -70,6 +74,7 @@ pre-commit installed at .git/hooks/pre-commit
 Если вам потребуется сделать коммит без проверок, то вы можете отключить их с помощью флага `--no-verify`:
 ```shell
 git commit -m 'Message' --no-verify
+git commit -m 'Message' -n # альтернативный флаг
 ```
 
 ## Как вести разработку
@@ -107,6 +112,28 @@ $ uv remove beautifulsoup4
 ```shell
 $ uv lock
 ```
+### Проверка кода линтерами (Ruff)
+
+Если внесли изменения и хотите отформатировать код перед `git commit`:
+
+```shell
+ruff format --diff .   # посмотреть, что изменится если применить форматирование
+ruff format .          # применить форматирование ко всем файлам
+ruff check --fix .     # исправить обнаруженные ошибки
+```
+При успешном выполнении команды, Вы получите в терминал слудующий вывод, в соответствии с командой:
+
+- diff предлагаемых изменений
+- список изменённых файлов
+- кол-во найденных и пофикшенных ошибок
+
+Шорткаты через make:
+
+```shell
+make lint # проверить синтаксис кода с помощью ruff
+make format # автофикс всех найденных ошибок
+```
+Если ошибок не будет найдено, Вы увидете следующее сообщение: `All checks passed!`. Если же обнаружится ошибка, ruff сообщит в каком файле, на какой строчке и что за ошибка обнаружена.
 
 ### Команды для быстрого запуска с помощью make
 
