@@ -4,7 +4,12 @@ from fastapi.staticfiles import StaticFiles
 app = FastAPI()
 
 
-@app.get("/users/me")
+@app.get(
+    "/users/me",
+    summary='Получить учетные данные пользователя',
+    response_description='Данные пользователя',
+    tags=['Users'],
+)
 def get_user():
     return {
         "email": "example@example.com",
