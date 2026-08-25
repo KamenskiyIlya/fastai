@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -62,9 +62,9 @@ class SiteResponse(BaseModel):
                 "id": 1,
                 "title": "Фан клуб Домино",
                 "prompt": "Сайт любителей играть в домино",
-                "htmlCodeUrl": "http://google.com/media/index.html",
-                "htmlCodeDownloadUrl": "http://google.com/media/index.html?response-content-disposition=attachment",
-                "screenshotUrl": "http://google.com/media/index.png",
+                "htmlCodeUrl": "http://127.0.0.1:8000/generated_index.html",
+                "htmlCodeDownloadUrl": "http://127.0.0.1:8000/generated_index.html",
+                "screenshotUrl": "http://127.0.0.1:8000/index.png",
                 "createdAt": "2025-06-15T18:29:56+00:00",
                 "updatedAt": "2025-06-15T18:29:56+00:00",
             },
@@ -95,7 +95,7 @@ class GeneratedSitesResponse(BaseModel):
                         "prompt": "Сайт любителей играть в домино",
                         "htmlCodeUrl": "http://127.0.0.1:8000/generated_index.html",
                         "htmlCodeDownloadUrl": "http://127.0.0.1:8000/generated_index.html",
-                        "screenshotUrl": "https://google.com/media/index.png",
+                        "screenshotUrl": "http://127.0.0.1:8000/index.png",
                         "createdAt": "2025-06-15T18:29:56+00:00",
                         "updatedAt": "2025-06-15T18:29:56+00:00",
                     },
@@ -136,7 +136,7 @@ def get_user_sites() -> GeneratedSitesResponse:
         prompt="Сайт любителей играть в домино",
         htmlCodeUrl="http://127.0.0.1:8000/generated_index.html",
         htmlCodeDownloadUrl="http://127.0.0.1:8000/generated_index.html",
-        screenshotUrl="https://google.com/media/index.png",
+        screenshotUrl="http://127.0.0.1:8000/index.png",
         createdAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
         updatedAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
     )
@@ -156,7 +156,7 @@ def create_site(body: CreateSiteRequest) -> SiteResponse:
         prompt=body.prompt,
         htmlCodeUrl="http://127.0.0.1:8000/generated_index.html",
         htmlCodeDownloadUrl="http://127.0.0.1:8000/generated_index.html",
-        screenshotUrl="https://google.com/media/index.png",
+        screenshotUrl="http://127.0.0.1:8000/index.png",
         createdAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
         updatedAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
     )
@@ -165,7 +165,9 @@ def create_site(body: CreateSiteRequest) -> SiteResponse:
 @app.post(
     "/sites/{site_id}/generate",
     summary="Сгенерировать HTML разметку сайта",
+    description="Код сайта будет транслироваться стримом по мере генерации.",
     tags=["Sites"],
+    response_class=PlainTextResponse,
 )
 async def generate_site(
     site_id: int,
@@ -183,7 +185,7 @@ async def generate_site(
             yield html_chunk
             await asyncio.sleep(0.10)
 
-    return StreamingResponse(html_chunk_generator(), media_type="text/html")
+    return StreamingResponse(html_chunk_generator(), media_type="text/plain")
 
 
 @app.get(
@@ -199,7 +201,7 @@ def get_site(site_id: int) -> SiteResponse:
         prompt="Сайт любителей играть в домино",
         htmlCodeUrl="http://127.0.0.1:8000/generated_index.html",
         htmlCodeDownloadUrl="http://127.0.0.1:8000/generated_index.html",
-        screenshotUrl="https://google.com/media/index.png",
+        screenshotUrl="http://127.0.0.1:8000/index.png",
         createdAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
         updatedAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
     )
