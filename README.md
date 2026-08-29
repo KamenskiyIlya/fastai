@@ -47,6 +47,42 @@ pre-commit install # Настройка pre-commit хуков чтобы авт�
 # вывод должнен быть pre-commit installed at .git/hooks/pre-commit
 ```
 
+### Настройка переменных окружения (.env)
+
+1. Скопируйте шаблон `example.env` и откройте режим редактирования в терминале(или в любом удобном редакторе):
+```shell
+cp example.env .env
+nano .env
+```
+> файл `.env` должен быть обязательно добавлен в `.gitignore` т.к. содержит чувствительные данные
+
+2. Заполните все обязательные переменные(не обязательные по необходимости):
+
+| Переменная | Обязательная | Default | Где взять |
+|---|---|---|---|
+| `DEEPSEEK__API_KEY` | да | - | В ЛК [DeepSeek](https://platform.deepseek.com/api_keys) или в агрегаторе, которым пользуетесь
+| `UNSPLASH__CLIENT_ID` | да | - | `https://unsplash.com/developers` -> New App -> страница с созданным приложением -> Access Key |
+| `DEEPSEEK__BASE_URL` | нет (если default) | `https://api.deepseek.com` | базовый url агрегатора, которым пользуетесь(обычно в ЛК) |
+| `DEEPSEEK__MODEL` | нет (если default) | `deepseek-chat` | модель, которой пользуетесь, уточняйте на сайте агрегатора |
+| `DEBUG` | нет | `False` | `True` или `False` - отвечает за дебаг режим |
+
+После настройке переходите к запуску проекта, при запуске, если все указано правильно, Вы увидетев терминале все инициализированные переменные в таком формате:
+```json
+{
+  "deepseek": {
+    "api_key": "**********",
+    "base_url": "https://openai.bothub.ru/v1",
+    "model": "deepseek-v4-flash-0731",
+    "max_connections": 10
+  },
+  "unsplash": {
+    "client_id": "**********",
+    "max_connections": 10,
+    "timeout": 30
+  },
+  "debug": true
+```
+
 ### Запуск
 
 ```shell

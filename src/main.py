@@ -1,13 +1,44 @@
-import asyncio
+from contextlib import asynccontextmanager
 from datetime import datetime
-from pathlib import Path
+from typing import Annotated
 
-from fastapi import FastAPI
-from fastapi.responses import PlainTextResponse, StreamingResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import (
+    FileResponse,
+    PlainTextResponse,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from html_page_generator import (
+    AsyncDeepseekClient,
+    AsyncUnsplashClient,
+)
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
 
-app = FastAPI()
+from env_settings import settings
+from generator import GENERATED_HTML_PATH, html_generator
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with (
+        AsyncUnsplashClient.setup(
+            settings.unsplash.client_id.get_secret_value(),
+            timeout=settings.unsplash.timeout,
+        ),
+        AsyncDeepseekClient.setup(
+            settings.deepseek.api_key.get_secret_value(),
+            settings.deepseek.base_url,
+            settings.deepseek.model,
+        ),
+    ):
+        app.state.settings = settings
+        yield
+
+
+app = FastAPI(lifespan=lifespan)
+
+print(settings.model_dump_json(indent=2))
 
 
 class UserDetailsResponse(BaseModel):
@@ -33,7 +64,14 @@ class UserDetailsResponse(BaseModel):
 
 
 class CreateSiteRequest(BaseModel):
-    prompt: str
+    prompt: Annotated[
+        str,
+        StringConstraints(
+            strip_whitespace=True,
+            min_length=5,
+            max_length=4000,
+        ),
+    ]
     title: str | None = Field(default=None, max_length=128)
 
     model_config = ConfigDict(
@@ -62,8 +100,8 @@ class SiteResponse(BaseModel):
                 "id": 1,
                 "title": "Фан клуб Домино",
                 "prompt": "Сайт любителей играть в домино",
-                "htmlCodeUrl": "http://127.0.0.1:8000/generated_index.html",
-                "htmlCodeDownloadUrl": "http://127.0.0.1:8000/generated_index.html",
+                "htmlCodeUrl": "http://127.0.0.1:8000/index.html",
+                "htmlCodeDownloadUrl": "http://127.0.0.1:8000/index.html",
                 "screenshotUrl": "http://127.0.0.1:8000/index.png",
                 "createdAt": "2025-06-15T18:29:56+00:00",
                 "updatedAt": "2025-06-15T18:29:56+00:00",
@@ -73,7 +111,14 @@ class SiteResponse(BaseModel):
 
 
 class SiteGenerationRequest(BaseModel):
-    prompt: str
+    prompt: Annotated[
+        str,
+        StringConstraints(
+            strip_whitespace=True,
+            min_length=5,
+            max_length=4000,
+        ),
+    ]
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -93,8 +138,8 @@ class GeneratedSitesResponse(BaseModel):
                         "id": 1,
                         "title": "Фан клуб Домино",
                         "prompt": "Сайт любителей играть в домино",
-                        "htmlCodeUrl": "http://127.0.0.1:8000/generated_index.html",
-                        "htmlCodeDownloadUrl": "http://127.0.0.1:8000/generated_index.html",
+                        "htmlCodeUrl": "http://127.0.0.1:8000/index.html",
+                        "htmlCodeDownloadUrl": "http://127.0.0.1:8000/index.html",
                         "screenshotUrl": "http://127.0.0.1:8000/index.png",
                         "createdAt": "2025-06-15T18:29:56+00:00",
                         "updatedAt": "2025-06-15T18:29:56+00:00",
@@ -134,8 +179,8 @@ def get_user_sites() -> GeneratedSitesResponse:
         id=1,
         title="Фан клуб Домино",
         prompt="Сайт любителей играть в домино",
-        htmlCodeUrl="http://127.0.0.1:8000/generated_index.html",
-        htmlCodeDownloadUrl="http://127.0.0.1:8000/generated_index.html",
+        htmlCodeUrl="http://127.0.0.1:8000/index.html",
+        htmlCodeDownloadUrl="http://127.0.0.1:8000/index.html",
         screenshotUrl="http://127.0.0.1:8000/index.png",
         createdAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
         updatedAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
@@ -154,8 +199,8 @@ def create_site(body: CreateSiteRequest) -> SiteResponse:
         id=1,
         title=body.title or "Фан клуб Домино",
         prompt=body.prompt,
-        htmlCodeUrl="http://127.0.0.1:8000/generated_index.html",
-        htmlCodeDownloadUrl="http://127.0.0.1:8000/generated_index.html",
+        htmlCodeUrl="http://127.0.0.1:8000/index.html",
+        htmlCodeDownloadUrl="http://127.0.0.1:8000/index.html",
         screenshotUrl="http://127.0.0.1:8000/index.png",
         createdAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
         updatedAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
@@ -171,21 +216,12 @@ def create_site(body: CreateSiteRequest) -> SiteResponse:
 )
 async def generate_site(
     site_id: int,
-    body: SiteGenerationRequest | None = None,
+    body: SiteGenerationRequest,
 ):
-    html_path = Path("frontend/generated_index.html")
-    with html_path.open(encoding="utf-8") as html_file:
-        html_content = html_file.read()
-
-    chunk_size = 500
-
-    async def html_chunk_generator():
-        for chunk_start in range(0, len(html_content), chunk_size):
-            html_chunk = html_content[chunk_start : chunk_start + chunk_size]
-            yield html_chunk
-            await asyncio.sleep(0.10)
-
-    return StreamingResponse(html_chunk_generator(), media_type="text/plain")
+    return StreamingResponse(
+        html_generator(body.prompt),
+        media_type="text/plain",
+    )
 
 
 @app.get(
@@ -199,12 +235,22 @@ def get_site(site_id: int) -> SiteResponse:
         id=site_id,
         title="Фан клуб Домино",
         prompt="Сайт любителей играть в домино",
-        htmlCodeUrl="http://127.0.0.1:8000/generated_index.html",
-        htmlCodeDownloadUrl="http://127.0.0.1:8000/generated_index.html",
+        htmlCodeUrl="http://127.0.0.1:8000/index.html",
+        htmlCodeDownloadUrl="http://127.0.0.1:8000/index.html",
         screenshotUrl="http://127.0.0.1:8000/index.png",
         createdAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
         updatedAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
     )
+
+
+@app.get("/index.html", include_in_schema=False)
+async def provide_index():
+    if not GENERATED_HTML_PATH.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="index.html was not generated",
+        )
+    return FileResponse(GENERATED_HTML_PATH, media_type="text/html")
 
 
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
