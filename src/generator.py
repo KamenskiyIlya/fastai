@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
@@ -25,7 +26,7 @@ async def html_generator(prompt: str) -> AsyncGenerator[str, None]:
                 generator.html_page.html_code,
                 encoding="utf-8",
             )
-            print("Генерация завершена полностью без ошибок")
+            logging.info("Генерация завершена полностью без ошибок")
         except anyio.get_cancelled_exc_class():
             raise
         except httpx.TimeoutException as exc:
