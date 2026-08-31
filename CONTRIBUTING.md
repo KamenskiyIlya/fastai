@@ -41,7 +41,7 @@ Built for Windows32
 
 IDE для корректной работы подсказок необходимо развернуть виртуальное окружение со всеми установленными зависимостями.
 
-В качестве пакетного менеджера на проекта используется [uv](https://docs.astral.sh/uv/).
+В качестве пакетного менеджера на проекте используется [uv](https://docs.astral.sh/uv/).
 
 [Установите uv](https://gitlab.dvmn.org/root/fastapi-articles/-/wikis/Uv-package-manager#1-%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0-uv) и в корне репозитория выполните команду
 
@@ -75,6 +75,139 @@ pre-commit installed at .git/hooks/pre-commit
 ```shell
 git commit -m 'Message' --no-verify
 git commit -m 'Message' -n # альтернативный флаг
+```
+
+### Установка MinIO
+
+Для разработки и работы с бакетом используется локально установленный MinIO. Интрукция по установке прописана для системы Ubuntu 22.04. Скачайте и установите официальный .deb-пакет:
+
+```shell
+wget https://dl.min.io/server/minio/release/linux-amd64/minio.deb
+sudo dpkg -i minio.deb
+```
+> Пакет создаст пользователя minio-user и systemd-сервис minio.service.
+
+### Настройка конфигурации MinIO
+
+Задайте учётные данные и адреса портов в файле `/etc/default/minio`:
+
+```shell
+nano ~/etc/default/minio
+```
+
+И настройте следующие параметры:
+
+```shell
+MINIO_ROOT_USER="ваш_логин"       # == AWS_ACCESS_KEY
+MINIO_ROOT_PASSWORD="ваш_пароль"  # == AWS_SECRET_KEY, не короче 8 символов
+MINIO_VOLUMES="/var/lib/minio"
+MINIO_OPTS="--address :9000 --console-address :9001"
+```
+> `:9000` - порт S3 API; `:9001` - порт веб-интерфейса, при обращении к порту 9000 будет перекидывать на веб-интерфейс
+
+### Запуск сервиса MinIO
+
+```shell
+sudo systemctl daemon-reload
+sudo systemctl enable --now minio
+systemctl status minio # сервис должен быть в статусе active (running)
+```
+
+### Установка клиента mcli
+
+Клиент MinIO - `mcli` потребуется для управления бакетами из терминала. Если установка прошла правильно - Вы должны увидеть версию.
+
+```shell
+wget https://dl.min.io/client/mc/release/linux-amd64/mcli_20250813083541.0.0_amd64.deb
+sudo dpkg -i mcli_20250813083541.0.0_amd64.deb
+mcli --version
+```
+
+### Адреса и авторизация MinIO
+
+- Адрес API MinIO: `http://127.0.0.1:9000` (при открытии в браузере — редирект на веб-интерфейс)
+- Адрес веб-интерфейса: `http://127.0.0.1:9001`
+- Когда зайдете в веб-интерфейс - авторизуйтесь введя `MINIO_ROOT_USER` из конфига как логин, а `MINIO_ROOT_PASSWORD` как пароль
+
+### Создание бакета
+
+В веб-интерфейсе создайте бакет `fastai-html` и выставите ему доступ `public`.
+Либо через `mcli`:
+
+```shell
+mcli alias set local http://127.0.0.1:9000 <MINIO_ROOT_USER> <MINIO_ROOT_PASSWORD>
+mcli mb local/fastai-html # создает новый бакет с названием fastai-html, можете дать свое
+mcli anonymous set public local/fastai-html   # публичный доступ к бакету
+mcli anonymous get local/fastai-html # должен быть такой вывод: Access permission for `local/fastai-html` is `public`
+```
+
+### Заливка файлов в бакет вручную
+
+Backend возвращает ссылки на файлы из бакета, поэтому в хранилище
+должны лежать два файла:
+
+- `index.html` - сгенерированная страница, источник: корень репозитория
+- `index.png` — скриншот сайта, источник: корень репозитория
+
+После того как руками их добавили в бакет через веб-интерфейс, можете проверить их доступность по ссылкам:
+- http://127.0.0.1:9000/fastai-html/index.html
+- http://127.0.0.1:9000/fastai-html/index.png
+
+> Если в бакете не будет файлов, фронтенд будет выглядеть сломанным: страница со списком сайтов не откроет сайт и не отобразит скриншот
+
+### Настройка переменных окружения (.env)
+
+1. Скопируйте шаблон `example.env` и откройте режим редактирования в терминале(или в любом удобном редакторе):
+```shell
+cp example.env .env
+nano .env
+```
+> файл `.env` должен быть обязательно добавлен в `.gitignore` т.к. содержит чувствительные данные
+
+2. Заполните все обязательные переменные(не обязательные по необходимости):
+
+| Переменная | Обязательная | Default | Где взять |
+|---|---|---|---|
+| `DEEPSEEK__API_KEY` | да | - | В ЛК [DeepSeek](https://platform.deepseek.com/api_keys) или в агрегаторе, которым пользуетесь
+| `UNSPLASH__CLIENT_ID` | да | - | `https://unsplash.com/developers` -> New App -> страница с созданным приложением -> Access Key |
+| `DEEPSEEK__BASE_URL` | нет (если default) | `https://api.deepseek.com` | базовый url агрегатора, которым пользуетесь(обычно в ЛК) |
+| `DEEPSEEK__MODEL` | нет (если default) | `deepseek-chat` | модель, которой пользуетесь, уточняйте на сайте агрегатора |
+| `S3__ACCESS_KEY` | да | - | логин от бакета (в MinIO - `MINIO_ROOT_USER`) |
+| `S3__SECRET_KEY` | да | - | пароль от бакета (в MinIO - `MINIO_ROOT_PASSWORD`) |
+| `S3__BUCKET_NAME` | да | - | имя бакета в MinIO (например `fastai-html`) |
+| `S3__BUCKET_URL` | нет (если default) | `http://127.0.0.1:9000` | endpoint сервера с портом |
+| `S3__REGION_NAME` | нет | `us-east-1` | регион бакета (по умолчанию `us-east-1`, если не задавали явно) |
+| `S3__MAX_POOL_CONNECTIONS` | нет | `10` | лимит одновременных подключений к бакету |
+| `S3__CONNECT_TIMEOUT` | нет | `20` | таймаут подключения к бакету, сек |
+| `S3__READ_TIMEOUT` | нет | `30` | таймаут чтения из бакета, сек |
+| `DEBUG` | нет | `False` | `True` или `False` - отвечает за дебаг режим |
+
+После настройке переходите к запуску проекта, при запуске, если все указано правильно, Вы увидетев терминале все инициализированные переменные в таком формате:
+```json
+{
+  "deepseek": {
+    "api_key": "**********",
+    "base_url": "https://openai.bothub.ru/v1",
+    "model": "deepseek-v4-flash-0731",
+    "max_connections": 10
+  },
+  "unsplash": {
+    "client_id": "**********",
+    "max_connections": 10,
+    "timeout": 30
+  },
+  "s3": {
+    "access_key": "**********",
+    "secret_key": "**********",
+    "bucket_name": "fastai-html",
+    "bucket_url": "http://127.0.0.1:9000",
+    "region_name": "us-east-1",
+    "max_pool_connections": 9,
+    "connect_timeout": 19,
+    "read_timeout": 29
+  },
+  "debug": true
+}
 ```
 
 ## Как вести разработку

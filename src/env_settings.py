@@ -21,6 +21,9 @@ class S3Settings(BaseSettings):
     bucket_name: str
     bucket_url: str = "http://127.0.0.1:9000"
     region_name: str = "us-east-1"
+    max_pool_connections: PositiveInt = 10
+    connect_timeout: PositiveInt = 20
+    read_timeout: PositiveInt = 30
 
 
 class Settings(BaseSettings):
