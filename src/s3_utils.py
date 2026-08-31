@@ -10,6 +10,18 @@ from env_settings import settings
 
 HTML_PATH = Path(__file__).resolve().parent.parent
 
+_s3_config = AioConfig(
+    max_pool_connections=settings.s3.max_pool_connections,
+    connect_timeout=settings.s3.connect_timeout,
+    read_timeout=settings.s3.read_timeout,
+)
+
+_s3_session = aioboto3.Session(
+    aws_access_key_id=settings.s3.access_key.get_secret_value(),
+    aws_secret_access_key=settings.s3.secret_key.get_secret_value(),
+    region_name=settings.s3.region_name,
+)
+
 
 def get_mime_type(filename: str) -> str | None:
     mime_type, _ = mimetypes.guess_type(filename)
@@ -17,22 +29,12 @@ def get_mime_type(filename: str) -> str | None:
 
 
 async def upload_file(filename: str) -> str:
-    config = AioConfig(
-        max_pool_connections=settings.s3.max_pool_connections,
-        connect_timeout=settings.s3.connect_timeout,
-        read_timeout=settings.s3.read_timeout,
-    )
-    session = aioboto3.Session(
-        aws_access_key_id=settings.s3.access_key.get_secret_value(),
-        aws_secret_access_key=settings.s3.secret_key.get_secret_value(),
-        region_name=settings.s3.region_name,
-    )
     try:
         body = (HTML_PATH / filename).read_bytes()
-        async with session.client(  # type: ignore
+        async with _s3_session.client(  # type: ignore
             "s3",
             endpoint_url=settings.s3.bucket_url,
-            config=config,
+            config=_s3_config,
         ) as client:
             await client.put_object(
                 Bucket=settings.s3.bucket_name,
@@ -45,8 +47,8 @@ async def upload_file(filename: str) -> str:
                 f"{settings.s3.bucket_url}/{settings.s3.bucket_name}"
                 f"/{filename}"
             )
-    except Exception as exc:
-        logging.error(f"Ошибка загрузки в bucket: {exc}")
+    except Exception:
+        logging.error("Ошибка загрузки в bucket", exc_info=True)
         raise
 
 

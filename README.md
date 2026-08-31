@@ -102,6 +102,12 @@ nano .env
 | `S3__MAX_POOL_CONNECTIONS` | нет | `10` | лимит одновременных подключений к бакету |
 | `S3__CONNECT_TIMEOUT` | нет | `20` | таймаут подключения к бакету, сек |
 | `S3__READ_TIMEOUT` | нет | `30` | таймаут чтения из бакета, сек |
+| `GOTENBERG__BASE_URL` | нет | `https://demo.gotenberg.dev` | базовый адрес Gotenberg API |
+| `GOTENBERG__SCREENSHOT_WIDTH` | нет | `1000` | ширина скриншота в пикселях |
+| `GOTENBERG__SCREENSHOT_FORMAT` | нет | `png` | формат скриншота (`jpeg`, `png`, `webp`) |
+| `GOTENBERG__WAIT_DELAY` | нет | `3` | время ожидания завершения анимаций на HTML-странице, сек |
+| `GOTENBERG__CONNECT_TIMEOUT` | нет | `20` | таймаут подключения к Gotenberg, сек |
+| `GOTENBERG__MAX_POOL_CONNECTIONS` | нет | `10` | лимит одновременных подключений к Gotenberg |
 | `DEBUG` | нет | `False` | `True` или `False` - отвечает за дебаг режим |
 
 После настройке переходите к запуску проекта, при запуске, если все указано правильно, Вы увидетев терминале все инициализированные переменные в таком формате:
@@ -127,6 +133,14 @@ nano .env
     "max_pool_connections": 9,
     "connect_timeout": 19,
     "read_timeout": 29
+  },
+  "gotenberg": {
+    "base_url": "https://demo.gotenberg.dev",
+    "screenshot_width": 1000,
+    "screenshot_format": "png",
+    "wait_delay": 3,
+    "max_pool_connections": 10,
+    "connect_timeout": 20
   },
   "debug": true
 }

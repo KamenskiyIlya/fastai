@@ -18,7 +18,11 @@ from html_page_generator import (
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
 
 from env_settings import settings
-from generator import GENERATED_HTML_PATH, html_generator
+from generator import (
+    GENERATED_HTML_PATH,
+    html_generator,
+    make_screenshot,
+)
 from s3_utils import get_site_urls, upload_file
 
 logging.basicConfig(
@@ -240,8 +244,17 @@ async def generate_site(
                     await upload_file("index.html")
                     logging.info("HTML файл успешно загружен в bucket")
                 except Exception:
-                    logging.info(
+                    logging.error(
                         "HTML файл не был загружен в bucket",
+                        exc_info=True,
+                    )
+                try:
+                    await make_screenshot()
+                    await upload_file("index.png")
+                    logging.info("скриншот успешно загружен в bucket")
+                except Exception:
+                    logging.error(
+                        "скриншот не был загружен в bucket",
                         exc_info=True,
                     )
         except anyio.get_cancelled_exc_class():

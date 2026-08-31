@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import PositiveInt, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -26,6 +28,15 @@ class S3Settings(BaseSettings):
     read_timeout: PositiveInt = 30
 
 
+class GotenbergSettings(BaseSettings):
+    base_url: str = "https://demo.gotenberg.dev"
+    screenshot_width: PositiveInt = 1000
+    screenshot_format: Literal["png", "jpeg", "webp"] = "png"
+    wait_delay: PositiveInt = 3
+    connect_timeout: PositiveInt = 20
+    max_pool_connections: PositiveInt = 10
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -36,6 +47,7 @@ class Settings(BaseSettings):
     deepseek: DeepSeekSettings
     unsplash: UnsplashSettings
     s3: S3Settings
+    gotenberg: GotenbergSettings = GotenbergSettings()
     debug: bool = False
 
 
