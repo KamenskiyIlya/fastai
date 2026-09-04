@@ -13,18 +13,24 @@
 Для запуска ПО вам понадобятся консольный Git и Make. Инструкции по их установке ищите на
 официальных сайтах:
 
-- [Git SCM](https://git-scm.com/)
-- [GNU Make](https://www.gnu.org/software/make/)
+- [Git SCM](https://git-scm.com/) - система контроля версий
+- [GNU Make](https://www.gnu.org/software/make/) - утилита для автоматизации преобразования файлов из одной формы в другую
+- [uv](https://docs.astral.sh/uv/#tools) - менеджер пакетов
+- [MinIO](https://www.min.io/) - S3 сервис (bucket)
 
 Вы можете проверить, установлены ли эти программы с помощью команд:
 ```shell
-$ git --version
-git version 2.37.1.windows.1
+git --version
+# git version 2.55.0
 
-$ make --version
-GNU Make 4.4.1
-Built for Windows32
-<...>
+make --version
+# GNU Make 4.4.1
+
+uv --version
+# uv 0.12.5 (x86_64-unknown-linux-gnu)
+
+minio --version
+# minio version RELEASE.2025-10-15T17-29-55Z ...
 ```
 
 Для тех, кто использует Windows необходимы также программы **git** и **git bash**. В **git bash** необходимо дополнительно установить
@@ -46,7 +52,7 @@ IDE для корректной работы подсказок необходи
 [Установите uv](https://gitlab.dvmn.org/root/fastapi-articles/-/wikis/Uv-package-manager#1-%D1%83%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0-uv) и в корне репозитория выполните команду
 
 ```shell
-$ uv sync
+uv sync
 ```
 
 [uv](https://docs.astral.sh/uv/) создаст виртуальное окружение, установит необходимую версию Python и все необходимые зависимости.
@@ -54,8 +60,8 @@ $ uv sync
 После этого активируйте виртуальное окружение в текущей сессии терминала:
 
 ```shell
-$ source .venv/bin/activate  # для Linux
-$ .\.venv\Scripts\activate  # Для Windows
+source .venv/bin/activate  # для Linux
+.\.venv\Scripts\activate  # Для Windows
 ```
 
 ### Настройка pre-commit хуков
@@ -65,7 +71,7 @@ $ .\.venv\Scripts\activate  # Для Windows
 В корне репозитория в **активированном виртуальном окружении** запустите команду для настройки хуков:
 
 ```shell
-$ pre-commit install
+pre-commit install
 pre-commit installed at .git/hooks/pre-commit
 ```
 
@@ -79,7 +85,7 @@ git commit -m 'Message' -n # альтернативный флаг
 
 ### Установка MinIO
 
-Для разработки и работы с бакетом используется локально установленный MinIO. Интрукция по установке прописана для системы Ubuntu 22.04. Скачайте и установите официальный .deb-пакет:
+Для разработки и работы с бакетом используется локально установленный MinIO. Инcтрукция по установке прописана для системы Ubuntu 22.04. Скачайте и установите официальный .deb-пакет:
 
 ```shell
 wget https://dl.min.io/server/minio/release/linux-amd64/minio.deb
@@ -187,9 +193,12 @@ nano .env
 | Переменная | Обязательная | Default | Где взять |
 |---|---|---|---|
 | `DEEPSEEK__API_KEY` | да | - | В ЛК [DeepSeek](https://platform.deepseek.com/api_keys) или в агрегаторе, которым пользуетесь
-| `UNSPLASH__CLIENT_ID` | да | - | `https://unsplash.com/developers` -> New App -> страница с созданным приложением -> Access Key |
 | `DEEPSEEK__BASE_URL` | нет (если default) | `https://api.deepseek.com` | базовый url агрегатора, которым пользуетесь(обычно в ЛК) |
 | `DEEPSEEK__MODEL` | нет (если default) | `deepseek-chat` | модель, которой пользуетесь, уточняйте на сайте агрегатора |
+| `DEEPSEEK__MAX_CONNECTIONS` | нет | None | максимальное кол-во попыток подключиться к ИИ |
+| `UNSPLASH__CLIENT_ID` | да | - | `https://unsplash.com/developers` -> New App -> страница с созданным приложением -> Access Key |
+| `UNSPLASH__MAX_CONNECTIONS` | нет | None | максимальное кол-во попыток подключиться к Unsplash |
+| `UNSPLASH__TIMEOUT` | нет | - | 15 | время на попытку подключиться к Unsplash
 | `S3__ACCESS_KEY` | да | - | логин от бакета (в MinIO - `MINIO_ROOT_USER`) |
 | `S3__SECRET_KEY` | да | - | пароль от бакета (в MinIO - `MINIO_ROOT_PASSWORD`) |
 | `S3__BUCKET_NAME` | да | - | имя бакета в MinIO (например `fastai-html`) |
@@ -206,7 +215,7 @@ nano .env
 | `GOTENBERG__MAX_POOL_CONNECTIONS` | нет | `10` | лимит одновременных подключений к Gotenberg |
 | `DEBUG` | нет | `False` | `True` или `False` - отвечает за дебаг режим |
 
-После настройке переходите к запуску проекта, при запуске, если все указано правильно, Вы увидетев терминале все инициализированные переменные в таком формате:
+После настройки переходите к запуску проекта, при запуске, если все указано правильно, Вы увидете в терминале все инициализированные переменные в таком формате:
 ```json
 {
   "deepseek": {
@@ -220,40 +229,48 @@ nano .env
     "max_connections": 10,
     "timeout": 30
   },
-  "s3": {
-    "access_key": "**********",
-    "secret_key": "**********",
-    "bucket_name": "fastai-html",
-    "bucket_url": "http://127.0.0.1:9000",
-    "region_name": "us-east-1",
-    "max_pool_connections": 9,
-    "connect_timeout": 19,
-    "read_timeout": 29
-  },
-  "gotenberg": {
-    "base_url": "https://demo.gotenberg.dev",
-    "screenshot_width": 1000,
-    "screenshot_format": "png",
-    "wait_delay": 3,
-    "max_pool_connections": 10,
-    "connect_timeout": 20
-  },
-  "debug": true
+  ...
 }
 ```
+### Подключение фронтенда для локальной отладки
 
-## Как вести разработку
+Так как данный в данном репозитории разрабатывается только backend часть, frontend не заливается в git (папка `/frontend` добавлена в `.gitignore`). Для того чтобы настроить frontend часть для разработки backend, проделайте следующее:
+
+1. Скачайте [архив фронтенда](https://dvmn.org/filer/canonical/1750917110/1035/)
+2. Распакуйте скачанный архив в корне проекта
+
+```shell
+unzip .../fronend.zip -d .
+```
+3. Создайте и настройте `frontend-settings.json`
+
+```shell
+touch frontend/frontend-settings.json
+```
+
+Запишите в этот файл следующее:
+
+
+```json
+{
+    "backendBaseUrl": "/"
+}
+```
+### Запуск проекта
 
 Код проекта находится в папке `/src`.
 
 Находясь в корневой директории проекта, запустить проект можно командой:
 
 ```shell
+source .venv/bin/activate
 fastapi dev src/main.py
 ```
-Проект будет работать по адресу http://127.0.0.1:8000/
+Проект будет работать по адресу [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
-> Перед запуском убедитесь, что в корне репозитория есть папка `frontend` (она не хранится в git). Без неё приложение не стартует. Настройка фронтенда описана ниже - в разделе "Подключение фронтенда для локальной отладки"
+> Перед запуском убедитесь, что в корне репозитория есть папка `frontend` (она не хранится в git). Без неё приложение не стартует.
+
+## Как вести разработку
 
 ### Как установить python-пакет в виртуальное окружение
 
@@ -314,36 +331,3 @@ make format # автофикс всех найденных ошибок
 $ make list
 ...
 ```
-
-### Подключение фронтенда для локальной отладки
-
-Так как данный в данном репозитории разрабатывается только backend часть, frontend не заливается в git (папка `/frontend` добавлена в `.gitignore`). Для того чтобы настроить frontend часть для разработки backend, проделайте следующее:
-
-1. Скачайте [архив фронтенда](https://dvmn.org/filer/canonical/1750917110/1035/)
-2. Распакуйте скачанный архив в корне проекта
-
-```shell
-unzip .../fronend.zip -d .
-```
-3. Создайте и настройте `frontend-settings.json`
-
-```shell
-touch frontend/frontend-settings.json
-```
-
-Запишите в этот файл следующее:
-
-
-```json
-{
-    "backendBaseUrl": "/"
-}
-```
-4. Запустите backend
-
-```shell
-source .venv/bin/activate # активировать окружение, если не было активировано до этого
-fastapi dev src/main.py 
-```
-5. Откройте главную страницу по ссылке из терминала - [http://127.0.0.1:8000](http://127.0.0.1:8000)
-6. Проверьте, что главная страница загружается без ошибок в работе. Откройте панель разработчика в браузере нажав `F12`, в терминале не должно быть ошибок 404. Если все таки присутствуют ошибки 404, значит Вы где-то ошиблись при настройке или что-то работает не так как должно.
