@@ -1,13 +1,13 @@
 from typing import Literal
 
-from pydantic import PositiveInt, SecretStr
+from pydantic import HttpUrl, PositiveInt, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class DeepSeekSettings(BaseSettings):
     api_key: SecretStr
-    base_url: str = ""
-    model: str = ""
+    base_url: HttpUrl = HttpUrl("https://api.deepseek.com")
+    model: str = "deepseek-chat"
     max_connections: PositiveInt | None = None
 
 
@@ -21,7 +21,7 @@ class S3Settings(BaseSettings):
     access_key: SecretStr
     secret_key: SecretStr
     bucket_name: str
-    bucket_url: str = "http://127.0.0.1:9000"
+    bucket_url: HttpUrl = HttpUrl("http://127.0.0.1:9000")
     region_name: str = "us-east-1"
     max_pool_connections: PositiveInt = 10
     connect_timeout: PositiveInt = 20
@@ -29,7 +29,7 @@ class S3Settings(BaseSettings):
 
 
 class GotenbergSettings(BaseSettings):
-    base_url: str = "https://demo.gotenberg.dev"
+    base_url: HttpUrl = HttpUrl("https://demo.gotenberg.dev")
     screenshot_width: PositiveInt = 1000
     screenshot_format: Literal["png", "jpeg", "webp"] = "png"
     wait_delay: PositiveInt = 3

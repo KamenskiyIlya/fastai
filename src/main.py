@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
         ),
         AsyncDeepseekClient.setup(
             settings.deepseek.api_key.get_secret_value(),
-            settings.deepseek.base_url,
+            str(settings.deepseek.base_url),
             settings.deepseek.model,
         ),
     ):

@@ -6,6 +6,7 @@ from pydantic import (
     ConfigDict,
     EmailStr,
     Field,
+    HttpUrl,
     StringConstraints,
 )
 
@@ -57,11 +58,11 @@ class SiteResponse(BaseModel):
     id: int
     title: str
     prompt: str
-    html_code_url: str | None = Field(serialization_alias="htmlCodeUrl")
-    html_code_download_url: str | None = Field(
+    html_code_url: HttpUrl | None = Field(serialization_alias="htmlCodeUrl")
+    html_code_download_url: HttpUrl | None = Field(
         serialization_alias="htmlCodeDownloadUrl",
     )
-    screenshot_url: str | None = Field(serialization_alias="screenshotUrl")
+    screenshot_url: HttpUrl | None = Field(serialization_alias="screenshotUrl")
     created_at: datetime = Field(serialization_alias="createdAt")
     updated_at: datetime = Field(serialization_alias="updatedAt")
 

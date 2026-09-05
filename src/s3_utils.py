@@ -5,6 +5,7 @@ from pathlib import Path
 import aioboto3
 from aiobotocore.config import AioConfig
 from furl import furl
+from pydantic import HttpUrl
 
 from env_settings import settings
 
@@ -33,7 +34,7 @@ async def upload_file(filename: str) -> str:
         body = (HTML_PATH / filename).read_bytes()
         async with _s3_session.client(  # type: ignore
             "s3",
-            endpoint_url=settings.s3.bucket_url,
+            endpoint_url=str(settings.s3.bucket_url),
             config=_s3_config,
         ) as client:
             await client.put_object(
@@ -52,19 +53,21 @@ async def upload_file(filename: str) -> str:
         raise
 
 
-def make_public_url(filename: str) -> str:
-    return f"{settings.s3.bucket_url}/{settings.s3.bucket_name}/{filename}"
+def make_public_url(filename: str) -> HttpUrl:
+    return HttpUrl(
+        f"{settings.s3.bucket_url}/{settings.s3.bucket_name}/{filename}",
+    )
 
 
-def make_download_url(base_url: str, filename: str) -> str:
-    url = furl(base_url)
+def make_download_url(base_url: HttpUrl, filename: str) -> HttpUrl:
+    url = furl(str(base_url))
     url.args["response-content-disposition"] = (
         f'attachment; filename="{filename}"'
     )
-    return str(url)
+    return HttpUrl(str(url))
 
 
-def get_site_urls() -> tuple[str, str, str]:
+def get_site_urls() -> tuple[HttpUrl, HttpUrl, HttpUrl]:
     open_url = make_public_url("index.html")
     download_url = make_download_url(open_url, "index.html")
     screenshot_url = make_public_url("index.png")

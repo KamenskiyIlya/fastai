@@ -55,7 +55,7 @@ async def make_screenshot() -> None:
     raw_html = GENERATED_HTML_PATH.read_text(encoding="utf-8")
     try:
         async with httpx.AsyncClient(
-            base_url=settings.gotenberg.base_url,
+            base_url=str(settings.gotenberg.base_url),
             timeout=httpx.Timeout(
                 settings.gotenberg.connect_timeout,
                 read=settings.gotenberg.wait_delay + 5,
