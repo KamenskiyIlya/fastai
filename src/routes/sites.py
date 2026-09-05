@@ -28,7 +28,7 @@ router = APIRouter(prefix="/sites", tags=["Sites"])
 )
 def get_user_sites() -> GeneratedSitesResponse:
     html_code_url = make_public_url("index.html")
-    html_download_url = make_download_url(html_code_url, "index.html")
+    html_download_url = make_download_url("index.html")
     screenshot_url = make_public_url("index.png")
     site = SiteResponse(
         id=1,
@@ -50,7 +50,7 @@ def get_user_sites() -> GeneratedSitesResponse:
 )
 def create_site(body: CreateSiteRequest) -> SiteResponse:
     html_code_url = make_public_url("index.html")
-    html_download_url = make_download_url(html_code_url, "index.html")
+    html_download_url = make_download_url("index.html")
     screenshot_url = make_public_url("index.png")
     return SiteResponse(
         id=1,
@@ -119,7 +119,7 @@ async def generate_site(
 )
 def get_site(site_id: int) -> SiteResponse:
     html_code_url = make_public_url("index.html")
-    html_download_url = make_download_url(html_code_url, "index.html")
+    html_download_url = make_download_url("index.html")
     screenshot_url = make_public_url("index.png")
     return SiteResponse(
         id=site_id,

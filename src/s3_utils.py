@@ -28,12 +28,18 @@ async def upload_file(s3_client, filename: str) -> str:
 
 def make_public_url(filename: str) -> HttpUrl:
     return HttpUrl(
-        f"{settings.s3.bucket_url}/{settings.s3.bucket_name}/{filename}",
+        str(
+            furl(str(settings.s3.bucket_url))
+            / settings.s3.bucket_name
+            / filename,
+        ),
     )
 
 
-def make_download_url(base_url: HttpUrl, filename: str) -> HttpUrl:
-    url = furl(str(base_url))
+def make_download_url(filename: str) -> HttpUrl:
+    url = (
+        furl(str(settings.s3.bucket_url)) / settings.s3.bucket_name / filename
+    )
     url.args["response-content-disposition"] = (
         f'attachment; filename="{filename}"'
     )
