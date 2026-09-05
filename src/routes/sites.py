@@ -9,7 +9,7 @@ from fastapi.responses import PlainTextResponse, StreamingResponse
 from gotenberg_api import GotenbergServerError
 
 from generator import html_generator, make_screenshot
-from s3_utils import get_site_urls, upload_file
+from s3_utils import make_download_url, make_public_url, upload_file
 from schemas import (
     CreateSiteRequest,
     GeneratedSitesResponse,
@@ -27,7 +27,9 @@ router = APIRouter(prefix="/sites", tags=["Sites"])
     tags=["Sites"],
 )
 def get_user_sites() -> GeneratedSitesResponse:
-    html_code_url, html_download_url, screenshot_url = get_site_urls()
+    html_code_url = make_public_url("index.html")
+    html_download_url = make_download_url(html_code_url, "index.html")
+    screenshot_url = make_public_url("index.png")
     site = SiteResponse(
         id=1,
         title="Фан клуб Домино",
@@ -47,7 +49,9 @@ def get_user_sites() -> GeneratedSitesResponse:
     summary="Создать сайт",
 )
 def create_site(body: CreateSiteRequest) -> SiteResponse:
-    html_code_url, html_download_url, screenshot_url = get_site_urls()
+    html_code_url = make_public_url("index.html")
+    html_download_url = make_download_url(html_code_url, "index.html")
+    screenshot_url = make_public_url("index.png")
     return SiteResponse(
         id=1,
         title=body.title or "Фан клуб Домино",
@@ -111,7 +115,9 @@ async def generate_site(
     summary="Получить сайт",
 )
 def get_site(site_id: int) -> SiteResponse:
-    html_code_url, html_download_url, screenshot_url = get_site_urls()
+    html_code_url = make_public_url("index.html")
+    html_download_url = make_download_url(html_code_url, "index.html")
+    screenshot_url = make_public_url("index.png")
     return SiteResponse(
         id=site_id,
         title="Фан клуб Домино",

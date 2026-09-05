@@ -57,10 +57,3 @@ def make_download_url(base_url: HttpUrl, filename: str) -> HttpUrl:
         f'attachment; filename="{filename}"'
     )
     return HttpUrl(str(url))
-
-
-def get_site_urls() -> tuple[HttpUrl, HttpUrl, HttpUrl]:
-    open_url = make_public_url("index.html")
-    download_url = make_download_url(open_url, "index.html")
-    screenshot_url = make_public_url("index.png")
-    return open_url, download_url, screenshot_url
