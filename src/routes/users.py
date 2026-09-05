@@ -16,9 +16,9 @@ router = APIRouter(prefix="/users", tags=["Users"])
 def get_user() -> UserDetailsResponse:
     return UserDetailsResponse(
         email="example@example.com",
-        isActive=True,
-        profileId=1,
-        registeredAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-        updatedAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
+        is_active=True,
+        profile_id=1,
+        registered_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
+        updated_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
         username="klol1k",
     )

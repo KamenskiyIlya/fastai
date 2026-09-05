@@ -1,16 +1,22 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    StringConstraints,
+)
 
 
 class UserDetailsResponse(BaseModel):
-    profileId: int
+    profile_id: int = Field(serialization_alias="profileId")
     email: EmailStr
     username: str = Field(..., max_length=254)
-    registeredAt: datetime
-    updatedAt: datetime
-    isActive: bool
+    registered_at: datetime = Field(serialization_alias="registeredAt")
+    updated_at: datetime = Field(serialization_alias="updatedAt")
+    is_active: bool = Field(serialization_alias="isActive")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -51,11 +57,13 @@ class SiteResponse(BaseModel):
     id: int
     title: str
     prompt: str
-    htmlCodeUrl: str | None
-    htmlCodeDownloadUrl: str | None
-    screenshotUrl: str | None
-    createdAt: datetime
-    updatedAt: datetime
+    html_code_url: str | None = Field(serialization_alias="htmlCodeUrl")
+    html_code_download_url: str | None = Field(
+        serialization_alias="htmlCodeDownloadUrl",
+    )
+    screenshot_url: str | None = Field(serialization_alias="screenshotUrl")
+    created_at: datetime = Field(serialization_alias="createdAt")
+    updated_at: datetime = Field(serialization_alias="updatedAt")
 
     model_config = ConfigDict(
         json_schema_extra={

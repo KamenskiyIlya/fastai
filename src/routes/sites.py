@@ -29,11 +29,11 @@ def get_user_sites() -> GeneratedSitesResponse:
         id=1,
         title="Фан клуб Домино",
         prompt="Сайт любителей играть в домино",
-        htmlCodeUrl=html_code_url,
-        htmlCodeDownloadUrl=html_download_url,
-        screenshotUrl=screenshot_url,
-        createdAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-        updatedAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
+        html_code_url=html_code_url,
+        html_code_download_url=html_download_url,
+        screenshot_url=screenshot_url,
+        created_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
+        updated_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
     )
     return GeneratedSitesResponse(sites=[site])
 
@@ -49,11 +49,11 @@ def create_site(body: CreateSiteRequest) -> SiteResponse:
         id=1,
         title=body.title or "Фан клуб Домино",
         prompt=body.prompt,
-        htmlCodeUrl=html_code_url,
-        htmlCodeDownloadUrl=html_download_url,
-        screenshotUrl=screenshot_url,
-        createdAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-        updatedAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
+        html_code_url=html_code_url,
+        html_code_download_url=html_download_url,
+        screenshot_url=screenshot_url,
+        created_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
+        updated_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
     )
 
 
@@ -109,9 +109,9 @@ def get_site(site_id: int) -> SiteResponse:
         id=site_id,
         title="Фан клуб Домино",
         prompt="Сайт любителей играть в домино",
-        htmlCodeUrl=html_code_url,
-        htmlCodeDownloadUrl=html_download_url,
-        screenshotUrl=screenshot_url,
-        createdAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-        updatedAt=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
+        html_code_url=html_code_url,
+        html_code_download_url=html_download_url,
+        screenshot_url=screenshot_url,
+        created_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
+        updated_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
     )
