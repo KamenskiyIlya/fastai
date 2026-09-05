@@ -2,8 +2,11 @@ import logging
 from datetime import datetime
 
 import anyio
+import httpx
+from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse, StreamingResponse
+from gotenberg_api import GotenbergServerError
 
 from generator import html_generator, make_screenshot
 from s3_utils import get_site_urls, upload_file
@@ -68,29 +71,33 @@ async def generate_site(
     body: SiteGenerationRequest,
 ):
     async def stream_and_upload():
-        try:
-            with anyio.CancelScope(shield=True):
-                async for chunk in html_generator(body.prompt):
-                    yield chunk
-                try:
-                    await upload_file("index.html")
-                    logging.info("HTML файл успешно загружен в bucket")
-                except Exception:
-                    logging.error(
-                        "HTML файл не был загружен в bucket",
-                        exc_info=True,
-                    )
-                try:
-                    await make_screenshot()
-                    await upload_file("index.png")
-                    logging.info("скриншот успешно загружен в bucket")
-                except Exception:
-                    logging.error(
-                        "скриншот не был загружен в bucket",
-                        exc_info=True,
-                    )
-        except anyio.get_cancelled_exc_class():
-            raise
+        with anyio.CancelScope(shield=True):
+            async for chunk in html_generator(body.prompt):
+                yield chunk
+            html_filename = "index.html"
+            screenshot_filename = "index.png"
+            try:
+                await upload_file(html_filename)
+                logging.info("HTML файл успешно загружен в bucket")
+            except (BotoCoreError, ClientError, FileNotFoundError):
+                logging.error(
+                    f"{html_filename} файл не был загружен в bucket",
+                    exc_info=True,
+                )
+            try:
+                await make_screenshot()
+                await upload_file(screenshot_filename)
+                logging.info("скриншот успешно загружен в bucket")
+            except (GotenbergServerError, httpx.HTTPError):
+                logging.error(
+                    "Скриншот не был сгенерирован, сайт отдается без него",
+                    exc_info=True,
+                )
+            except (BotoCoreError, ClientError, FileNotFoundError):
+                logging.error(
+                    f"{screenshot_filename} файл не был загружен в bucket",
+                    exc_info=True,
+                )
 
     return StreamingResponse(
         stream_and_upload(),

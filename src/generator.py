@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import httpx
-from gotenberg_api import GotenbergServerError, ScreenshotHTMLRequest
+from gotenberg_api import ScreenshotHTMLRequest
 from html_page_generator import (
     AsyncPageGenerator,
 )
@@ -28,50 +28,43 @@ async def html_generator(prompt: str) -> AsyncGenerator[str, None]:
             encoding="utf-8",
         )
         logging.info("Генерация завершена полностью без ошибок")
-    except httpx.TimeoutException as exc:
+    except httpx.TimeoutException:
         logging.error(
             "Генерация прервана: таймаут нейросети",
-            exc_info=exc,
+            exc_info=True,
         )
         raise
-    except httpx.HTTPStatusError as exc:
+    except httpx.HTTPStatusError:
         logging.error(
             "Генерация прервана: ошибка со стороны стороннего сервиса",
-            exc_info=exc,
+            exc_info=True,
         )
         raise
-    except httpx.HTTPError as exc:
+    except httpx.HTTPError:
         logging.error(
             "Генерация прервана: сеть недоступна",
-            exc_info=exc,
+            exc_info=True,
         )
-        raise
-    except Exception as exc:
-        logging.error("Генерация прервана: неожиданная ошибка", exc_info=exc)
         raise
 
 
 async def make_screenshot() -> None:
     raw_html = GENERATED_HTML_PATH.read_text(encoding="utf-8")
-    try:
-        async with httpx.AsyncClient(
-            base_url=str(settings.gotenberg.base_url),
-            timeout=httpx.Timeout(
-                settings.gotenberg.connect_timeout,
-                read=settings.gotenberg.wait_delay + 5,
-            ),
-            limits=httpx.Limits(
-                max_connections=settings.gotenberg.max_pool_connections,
-            ),
-        ) as client:
-            screenshot_bytes = await ScreenshotHTMLRequest(
-                index_html=raw_html,
-                width=settings.gotenberg.screenshot_width,
-                format=settings.gotenberg.screenshot_format,
-                wait_delay=settings.gotenberg.wait_delay,
-            ).asend(client)
-        SCREENSHOT_PATH.write_bytes(screenshot_bytes)
-        logging.info("Скриншот сайта успешно сгенерирован")
-    except GotenbergServerError as exc:
-        logging.error("Ошибка Gotenberg при генерации скриншота", exc_info=exc)
-        raise
+    async with httpx.AsyncClient(
+        base_url=str(settings.gotenberg.base_url),
+        timeout=httpx.Timeout(
+            settings.gotenberg.connect_timeout,
+            read=settings.gotenberg.wait_delay + 5,
+        ),
+        limits=httpx.Limits(
+            max_connections=settings.gotenberg.max_pool_connections,
+        ),
+    ) as client:
+        screenshot_bytes = await ScreenshotHTMLRequest(
+            index_html=raw_html,
+            width=settings.gotenberg.screenshot_width,
+            format=settings.gotenberg.screenshot_format,
+            wait_delay=settings.gotenberg.wait_delay,
+        ).asend(client)
+    SCREENSHOT_PATH.write_bytes(screenshot_bytes)
+    logging.info("Скриншот сайта успешно сгенерирован")

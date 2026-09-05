@@ -1,4 +1,3 @@
-import logging
 import mimetypes
 from pathlib import Path
 
@@ -30,27 +29,20 @@ def get_mime_type(filename: str) -> str | None:
 
 
 async def upload_file(filename: str) -> str:
-    try:
-        body = (HTML_PATH / filename).read_bytes()
-        async with _s3_session.client(  # type: ignore
-            "s3",
-            endpoint_url=str(settings.s3.bucket_url),
-            config=_s3_config,
-        ) as client:
-            await client.put_object(
-                Bucket=settings.s3.bucket_name,
-                Key=filename,
-                Body=body,
-                ContentType=get_mime_type(filename),
-                ContentDisposition="inline",
-            )
-            return (
-                f"{settings.s3.bucket_url}/{settings.s3.bucket_name}"
-                f"/{filename}"
-            )
-    except Exception:
-        logging.error("Ошибка загрузки в bucket", exc_info=True)
-        raise
+    body = (HTML_PATH / filename).read_bytes()
+    async with _s3_session.client(  # type: ignore
+        "s3",
+        endpoint_url=str(settings.s3.bucket_url),
+        config=_s3_config,
+    ) as client:
+        await client.put_object(
+            Bucket=settings.s3.bucket_name,
+            Key=filename,
+            Body=body,
+            ContentType=get_mime_type(filename),
+            ContentDisposition="inline",
+        )
+    return f"{settings.s3.bucket_url}/{settings.s3.bucket_name}/{filename}"
 
 
 def make_public_url(filename: str) -> HttpUrl:
