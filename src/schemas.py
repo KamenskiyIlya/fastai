@@ -10,6 +10,15 @@ from pydantic import (
     StringConstraints,
 )
 
+_prompt_constraints = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=5,
+        max_length=4000,
+    ),
+]
+
 
 class UserDetailsResponse(BaseModel):
     profile_id: int = Field(serialization_alias="profileId")
@@ -34,14 +43,7 @@ class UserDetailsResponse(BaseModel):
 
 
 class CreateSiteRequest(BaseModel):
-    prompt: Annotated[
-        str,
-        StringConstraints(
-            strip_whitespace=True,
-            min_length=5,
-            max_length=4000,
-        ),
-    ]
+    prompt: _prompt_constraints
     title: str | None = Field(default=None, max_length=128)
 
     model_config = ConfigDict(
@@ -110,14 +112,7 @@ class GeneratedSitesResponse(BaseModel):
 
 
 class SiteGenerationRequest(BaseModel):
-    prompt: Annotated[
-        str,
-        StringConstraints(
-            strip_whitespace=True,
-            min_length=5,
-            max_length=4000,
-        ),
-    ]
+    prompt: _prompt_constraints
 
     model_config = ConfigDict(
         json_schema_extra={
