@@ -38,6 +38,4 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(users_router)
 app.include_router(sites_router)
 
-print(settings.model_dump_json(indent=2))
-
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
