@@ -1,8 +1,6 @@
 import mimetypes
 from pathlib import Path
 
-import aioboto3
-from aiobotocore.config import AioConfig
 from furl import furl
 from pydantic import HttpUrl
 
@@ -10,38 +8,21 @@ from env_settings import settings
 
 HTML_PATH = Path(__file__).resolve().parent.parent
 
-_s3_config = AioConfig(
-    max_pool_connections=settings.s3.max_pool_connections,
-    connect_timeout=settings.s3.connect_timeout,
-    read_timeout=settings.s3.read_timeout,
-)
-
-_s3_session = aioboto3.Session(
-    aws_access_key_id=settings.s3.access_key.get_secret_value(),
-    aws_secret_access_key=settings.s3.secret_key.get_secret_value(),
-    region_name=settings.s3.region_name,
-)
-
 
 def get_mime_type(filename: str) -> str | None:
     mime_type, _ = mimetypes.guess_type(filename)
     return mime_type
 
 
-async def upload_file(filename: str) -> str:
+async def upload_file(s3_client, filename: str) -> str:
     body = (HTML_PATH / filename).read_bytes()
-    async with _s3_session.client(  # type: ignore
-        "s3",
-        endpoint_url=str(settings.s3.bucket_url),
-        config=_s3_config,
-    ) as client:
-        await client.put_object(
-            Bucket=settings.s3.bucket_name,
-            Key=filename,
-            Body=body,
-            ContentType=get_mime_type(filename),
-            ContentDisposition="inline",
-        )
+    await s3_client.put_object(
+        Bucket=settings.s3.bucket_name,
+        Key=filename,
+        Body=body,
+        ContentType=get_mime_type(filename),
+        ContentDisposition="inline",
+    )
     return f"{settings.s3.bucket_url}/{settings.s3.bucket_name}/{filename}"
 
 

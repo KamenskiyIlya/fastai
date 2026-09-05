@@ -4,7 +4,7 @@ from datetime import datetime
 import anyio
 import httpx
 from botocore.exceptions import BotoCoreError, ClientError
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from gotenberg_api import GotenbergServerError
 
@@ -71,17 +71,19 @@ def create_site(body: CreateSiteRequest) -> SiteResponse:
     response_class=PlainTextResponse,
 )
 async def generate_site(
+    request: Request,
     site_id: int,
     body: SiteGenerationRequest,
 ):
     async def stream_and_upload():
+        s3_client = request.app.state.s3_client
         with anyio.CancelScope(shield=True):
             async for chunk in html_generator(body.prompt):
                 yield chunk
             html_filename = "index.html"
             screenshot_filename = "index.png"
             try:
-                await upload_file(html_filename)
+                await upload_file(s3_client, html_filename)
                 logging.info("HTML файл успешно загружен в bucket")
             except (BotoCoreError, ClientError, FileNotFoundError):
                 logging.error(
@@ -90,7 +92,7 @@ async def generate_site(
                 )
             try:
                 await make_screenshot()
-                await upload_file(screenshot_filename)
+                await upload_file(s3_client, screenshot_filename)
                 logging.info("скриншот успешно загружен в bucket")
             except (GotenbergServerError, httpx.HTTPError):
                 logging.error(

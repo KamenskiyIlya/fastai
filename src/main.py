@@ -1,6 +1,8 @@
 import logging
 from contextlib import asynccontextmanager
 
+import aioboto3
+from aiobotocore.config import AioConfig
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from html_page_generator import (
@@ -16,6 +18,18 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
+_s3_config = AioConfig(
+    max_pool_connections=settings.s3.max_pool_connections,
+    connect_timeout=settings.s3.connect_timeout,
+    read_timeout=settings.s3.read_timeout,
+)
+
+_s3_session = aioboto3.Session(
+    aws_access_key_id=settings.s3.access_key.get_secret_value(),
+    aws_secret_access_key=settings.s3.secret_key.get_secret_value(),
+    region_name=settings.s3.region_name,
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,8 +43,14 @@ async def lifespan(app: FastAPI):
             str(settings.deepseek.base_url),
             settings.deepseek.model,
         ),
+        _s3_session.client(  # type: ignore
+            "s3",
+            endpoint_url=str(settings.s3.bucket_url),
+            config=_s3_config,
+        ) as s3_client,
     ):
         app.state.settings = settings
+        app.state.s3_client = s3_client
         yield
 
 
