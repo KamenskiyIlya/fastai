@@ -77,6 +77,7 @@ async def generate_site(
 ):
     async def stream_and_upload():
         s3_client = request.app.state.s3_client
+        gotenberg_client = request.app.state.gotenberg_client
         with anyio.CancelScope(shield=True):
             async for chunk in html_generator(body.prompt):
                 yield chunk
@@ -91,7 +92,7 @@ async def generate_site(
                     exc_info=True,
                 )
             try:
-                await make_screenshot()
+                await make_screenshot(gotenberg_client)
                 await upload_file(s3_client, screenshot_filename)
                 logging.info("скриншот успешно загружен в bucket")
             except (GotenbergServerError, httpx.HTTPError):

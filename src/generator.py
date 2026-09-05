@@ -48,23 +48,13 @@ async def html_generator(prompt: str) -> AsyncGenerator[str, None]:
         raise
 
 
-async def make_screenshot() -> None:
+async def make_screenshot(client: httpx.AsyncClient) -> None:
     raw_html = GENERATED_HTML_PATH.read_text(encoding="utf-8")
-    async with httpx.AsyncClient(
-        base_url=str(settings.gotenberg.base_url),
-        timeout=httpx.Timeout(
-            settings.gotenberg.connect_timeout,
-            read=settings.gotenberg.wait_delay + 5,
-        ),
-        limits=httpx.Limits(
-            max_connections=settings.gotenberg.max_pool_connections,
-        ),
-    ) as client:
-        screenshot_bytes = await ScreenshotHTMLRequest(
-            index_html=raw_html,
-            width=settings.gotenberg.screenshot_width,
-            format=settings.gotenberg.screenshot_format,
-            wait_delay=settings.gotenberg.wait_delay,
-        ).asend(client)
+    screenshot_bytes = await ScreenshotHTMLRequest(
+        index_html=raw_html,
+        width=settings.gotenberg.screenshot_width,
+        format=settings.gotenberg.screenshot_format,
+        wait_delay=settings.gotenberg.wait_delay,
+    ).asend(client)
     SCREENSHOT_PATH.write_bytes(screenshot_bytes)
     logging.info("Скриншот сайта успешно сгенерирован")

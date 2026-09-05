@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 
 import aioboto3
+import httpx
 from aiobotocore.config import AioConfig
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -48,9 +49,20 @@ async def lifespan(app: FastAPI):
             endpoint_url=str(settings.s3.bucket_url),
             config=_s3_config,
         ) as s3_client,
+        httpx.AsyncClient(
+            base_url=str(settings.gotenberg.base_url),
+            timeout=httpx.Timeout(
+                settings.gotenberg.connect_timeout,
+                read=settings.gotenberg.wait_delay + 5,
+            ),
+            limits=httpx.Limits(
+                max_connections=settings.gotenberg.max_pool_connections,
+            ),
+        ) as gotenberg_client,
     ):
         app.state.settings = settings
         app.state.s3_client = s3_client
+        app.state.gotenberg_client = gotenberg_client
         yield
 
 
