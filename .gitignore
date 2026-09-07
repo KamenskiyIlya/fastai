@@ -9,3 +9,4 @@ tmp*
 .vscode
 frontend/
 index.*
+index_*

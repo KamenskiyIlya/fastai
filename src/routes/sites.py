@@ -8,7 +8,12 @@ from fastapi import APIRouter, Request
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from gotenberg_api import GotenbergServerError
 
-from generator import html_generator, make_screenshot
+from generator import (
+    delete_site_file,
+    get_filename,
+    html_generator,
+    make_screenshot,
+)
 from s3_utils import make_download_url, make_public_url, upload_file
 from schemas import (
     CreateSiteRequest,
@@ -25,9 +30,12 @@ def create_site_response(
     title: str | None = None,
     prompt: str = "Сайт любителей играть в домино",
 ) -> SiteResponse:
-    html_code_url = make_public_url("index.html")
-    html_download_url = make_download_url("index.html")
-    screenshot_url = make_public_url("index.png")
+    html_filename = get_filename(site_id, "index.html")
+    screenshot_filename = get_filename(site_id, "index.png")
+
+    html_code_url = make_public_url(html_filename)
+    html_download_url = make_download_url(html_filename)
+    screenshot_url = make_public_url(screenshot_filename)
     return SiteResponse(
         id=site_id,
         title=title or "Фан клуб Домино",
@@ -58,7 +66,7 @@ def get_user_sites() -> GeneratedSitesResponse:
 )
 def create_site(body: CreateSiteRequest) -> SiteResponse:
     site_response = create_site_response(
-        site_id=1,
+        site_id=2,
         title=body.title,
         prompt=body.prompt,
     )
@@ -79,33 +87,37 @@ async def generate_site(
     async def stream_and_upload():
         s3_client = request.app.state.s3_client
         gotenberg_client = request.app.state.gotenberg_client
-        with anyio.CancelScope(shield=True):
-            async for chunk in html_generator(body.prompt):
-                yield chunk
-            html_filename = "index.html"
-            screenshot_filename = "index.png"
-            try:
-                await upload_file(s3_client, html_filename)
-                logging.info("HTML файл успешно загружен в bucket")
-            except (BotoCoreError, ClientError, FileNotFoundError):
-                logging.error(
-                    f"{html_filename} файл не был загружен в bucket",
-                    exc_info=True,
-                )
-            try:
-                await make_screenshot(gotenberg_client)
-                await upload_file(s3_client, screenshot_filename)
-                logging.info("скриншот успешно загружен в bucket")
-            except (GotenbergServerError, httpx.HTTPError):
-                logging.error(
-                    "Скриншот не был сгенерирован, сайт отдается без него",
-                    exc_info=True,
-                )
-            except (BotoCoreError, ClientError, FileNotFoundError):
-                logging.error(
-                    f"{screenshot_filename} файл не был загружен в bucket",
-                    exc_info=True,
-                )
+        html_filename = get_filename(site_id, "index.html")
+        screenshot_filename = get_filename(site_id, "index.png")
+        try:
+            with anyio.CancelScope(shield=True):
+                async for chunk in html_generator(body.prompt, site_id):
+                    yield chunk
+                try:
+                    await upload_file(s3_client, html_filename)
+                    logging.info("HTML файл успешно загружен в bucket")
+                except (BotoCoreError, ClientError, FileNotFoundError):
+                    logging.error(
+                        f"{html_filename} файл не был загружен в bucket",
+                        exc_info=True,
+                    )
+                try:
+                    await make_screenshot(gotenberg_client, site_id)
+                    await upload_file(s3_client, screenshot_filename)
+                    logging.info("скриншот успешно загружен в bucket")
+                except (GotenbergServerError, httpx.HTTPError):
+                    logging.error(
+                        "Скриншот не был сгенерирован, сайт отдается без него",
+                        exc_info=True,
+                    )
+                except (BotoCoreError, ClientError, FileNotFoundError):
+                    logging.error(
+                        f"{screenshot_filename} файл не был загружен в bucket",
+                        exc_info=True,
+                    )
+        finally:
+            delete_site_file(html_filename)
+            delete_site_file(screenshot_filename)
 
     return StreamingResponse(
         stream_and_upload(),

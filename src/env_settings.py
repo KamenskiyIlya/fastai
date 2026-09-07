@@ -32,7 +32,7 @@ class GotenbergSettings(BaseSettings):
     base_url: HttpUrl = HttpUrl("https://demo.gotenberg.dev")
     screenshot_width: PositiveInt = 1000
     screenshot_format: Literal["png", "jpeg", "webp"] = "png"
-    wait_delay: PositiveInt = 3
+    wait_delay: PositiveInt = 15
     connect_timeout: PositiveInt = 20
     max_pool_connections: PositiveInt = 10
 
