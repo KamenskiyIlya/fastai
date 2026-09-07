@@ -20,6 +20,26 @@ from schemas import (
 router = APIRouter(prefix="/sites", tags=["Sites"])
 
 
+def create_site_response(
+    site_id: int,
+    title: str | None = None,
+    prompt: str = "Сайт любителей играть в домино",
+) -> SiteResponse:
+    html_code_url = make_public_url("index.html")
+    html_download_url = make_download_url("index.html")
+    screenshot_url = make_public_url("index.png")
+    return SiteResponse(
+        id=site_id,
+        title=title or "Фан клуб Домино",
+        prompt=prompt,
+        html_code_url=html_code_url,
+        html_code_download_url=html_download_url,
+        screenshot_url=screenshot_url,
+        created_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
+        updated_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
+    )
+
+
 @router.get(
     "/my",
     response_model=GeneratedSitesResponse,
@@ -27,20 +47,8 @@ router = APIRouter(prefix="/sites", tags=["Sites"])
     tags=["Sites"],
 )
 def get_user_sites() -> GeneratedSitesResponse:
-    html_code_url = make_public_url("index.html")
-    html_download_url = make_download_url("index.html")
-    screenshot_url = make_public_url("index.png")
-    site = SiteResponse(
-        id=1,
-        title="Фан клуб Домино",
-        prompt="Сайт любителей играть в домино",
-        html_code_url=html_code_url,
-        html_code_download_url=html_download_url,
-        screenshot_url=screenshot_url,
-        created_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-        updated_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-    )
-    return GeneratedSitesResponse(sites=[site])
+    site_response = create_site_response(site_id=1)
+    return GeneratedSitesResponse(sites=[site_response])
 
 
 @router.post(
@@ -49,19 +57,12 @@ def get_user_sites() -> GeneratedSitesResponse:
     summary="Создать сайт",
 )
 def create_site(body: CreateSiteRequest) -> SiteResponse:
-    html_code_url = make_public_url("index.html")
-    html_download_url = make_download_url("index.html")
-    screenshot_url = make_public_url("index.png")
-    return SiteResponse(
-        id=1,
-        title=body.title or "Фан клуб Домино",
+    site_response = create_site_response(
+        site_id=1,
+        title=body.title,
         prompt=body.prompt,
-        html_code_url=html_code_url,
-        html_code_download_url=html_download_url,
-        screenshot_url=screenshot_url,
-        created_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-        updated_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
     )
+    return site_response
 
 
 @router.post(
@@ -118,16 +119,5 @@ async def generate_site(
     summary="Получить сайт",
 )
 def get_site(site_id: int) -> SiteResponse:
-    html_code_url = make_public_url("index.html")
-    html_download_url = make_download_url("index.html")
-    screenshot_url = make_public_url("index.png")
-    return SiteResponse(
-        id=site_id,
-        title="Фан клуб Домино",
-        prompt="Сайт любителей играть в домино",
-        html_code_url=html_code_url,
-        html_code_download_url=html_download_url,
-        screenshot_url=screenshot_url,
-        created_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-        updated_at=datetime.fromisoformat("2025-06-15T18:29:56+00:00"),
-    )
+    site_response = create_site_response(site_id)
+    return site_response

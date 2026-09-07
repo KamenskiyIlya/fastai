@@ -14,7 +14,7 @@ def get_mime_type(filename: str) -> str | None:
     return mime_type
 
 
-async def upload_file(s3_client, filename: str) -> str:
+async def upload_file(s3_client, filename: str):
     body = (HTML_PATH / filename).read_bytes()
     await s3_client.put_object(
         Bucket=settings.s3.bucket_name,
@@ -23,7 +23,6 @@ async def upload_file(s3_client, filename: str) -> str:
         ContentType=get_mime_type(filename),
         ContentDisposition="inline",
     )
-    return f"{settings.s3.bucket_url}/{settings.s3.bucket_name}/{filename}"
 
 
 def make_public_url(filename: str) -> HttpUrl:
