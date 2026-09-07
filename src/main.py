@@ -38,11 +38,17 @@ async def lifespan(app: FastAPI):
         AsyncUnsplashClient.setup(
             settings.unsplash.client_id.get_secret_value(),
             timeout=settings.unsplash.timeout,
+            limits=httpx.Limits(
+                max_connections=settings.unsplash.max_connections,
+            ),
         ),
         AsyncDeepseekClient.setup(
             settings.deepseek.api_key.get_secret_value(),
             str(settings.deepseek.base_url),
             settings.deepseek.model,
+            limits=httpx.Limits(
+                max_connections=settings.deepseek.max_connections,
+            ),
         ),
         _s3_session.client(  # type: ignore
             "s3",
